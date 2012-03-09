@@ -43,7 +43,7 @@ module Mongoid #:nodoc:
       #
       # * `:reserve`, which specifiees an array of reserved slugs.
       # Defaults to [], the empty array.
-      # 
+      #
       # * `:permanent`, which specifies whether the slug should be
       # immutable once created. Defaults to `false`.
       #
@@ -130,7 +130,7 @@ module Mongoid #:nodoc:
 
           def self.find_by_#{slug_name}!(slug)
             self.find_by_#{slug_name}(slug) ||
-              raise(Mongoid::Errors::DocumentNotFound.new(self, slug))
+              raise(Mongoid::Errors::DocumentNotFound.new(self,nil,nil))
           end
         CODE
 
@@ -182,12 +182,12 @@ module Mongoid #:nodoc:
           uniqueness_scope.
           only(slug_name).
           where(slug_name => pattern, :_id.ne => _id)
-      end    
+      end
 
       existing_slugs = existing_slugs.map do |obj|
         obj.read_attribute(slug_name)
       end
-      
+
       if slug_history_name
         if slug_scope &&
            self.class.reflect_on_association(slug_scope).nil?
@@ -201,7 +201,7 @@ module Mongoid #:nodoc:
         else
           history_slugged_documents =
             uniqueness_scope.
-            where(slug_history_name.all => [pattern], 
+            where(slug_history_name.all => [pattern],
                   :_id.ne => _id)
         end
 
@@ -211,7 +211,7 @@ module Mongoid #:nodoc:
           next if history_slugs.nil?
           existing_history_slugs.push(*history_slugs.find_all { |slug| slug =~ pattern })
         end
-        
+
         # if the only conflict is in the history of a document in the same scope,
         # transfer the slug
         if slug_scope && existing_slugs.count == 0 && existing_history_slugs.count > 0
@@ -226,8 +226,8 @@ module Mongoid #:nodoc:
         end
 
         existing_slugs += existing_history_slugs
-      end   
-      
+      end
+
       existing_slugs << slug if slug_reserve.any? { |reserved| reserved === slug }
 
       if existing_slugs.count > 0
@@ -258,10 +258,10 @@ module Mongoid #:nodoc:
 
     def generate_slug!
       old_slug = read_attribute(slug_name)
-      
+
       new_slug = find_unique_slug
       write_attribute(slug_name, new_slug)
-      
+
       if slug_history_name && old_slug != nil && new_slug != old_slug
         history_slugs = read_attribute(slug_history_name) || []
         history_slugs << old_slug
